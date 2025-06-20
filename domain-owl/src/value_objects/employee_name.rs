@@ -8,3 +8,9 @@ impl From<&str> for EmployeeName {
         EmployeeName(s.to_string())
     }
 }
+
+impl EmployeeName {
+    pub fn value(&self) -> &str {
+        &self.0
+    }
+}

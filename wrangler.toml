@@ -1,6 +1,13 @@
 name = "core-owl"
 main = "core-owl/build/worker/shim.mjs"
 compatibility_date = "2025-06-20"
+account_id = "bce0f152c69f3ec8fc56f23c8120077c"
 
 [build]
 command = "cd core-owl && cargo install -q worker-build && worker-build --release"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "owl-database01"
+database_id = "3e02fa98-9894-4a19-ba1d-00774da5e8ef"
+preview_database_id = "d786541f-6c87-4b99-b8df-e95504b5796c"

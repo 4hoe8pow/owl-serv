@@ -13,12 +13,12 @@ use axum::response::Response;
 pub struct AuthInteractor<R: EmployeeRepository, O: AuthOutputPort> {
     repository: R,
     output_port: O,
-    employee_service: EmployeeService<R>,
+    employee_service: EmployeeService,
 }
 
-impl<R: EmployeeRepository + Clone, O: AuthOutputPort> AuthInteractor<R, O> {
+impl<R: EmployeeRepository, O: AuthOutputPort> AuthInteractor<R, O> {
     pub fn new(repository: R, output_port: O) -> Self {
-        let employee_service = EmployeeService::new(repository.clone());
+        let employee_service = EmployeeService::new();
         Self {
             repository,
             output_port,

@@ -8,3 +8,9 @@ impl From<&str> for EmployeeEmail {
         EmployeeEmail(s.to_string())
     }
 }
+
+impl EmployeeEmail {
+    pub fn value(&self) -> &str {
+        &self.0
+    }
+}

@@ -1,14 +1,17 @@
 use crate::domain_errors::DomainEmployeeError;
 use crate::entities::auth::employee::Employee;
-use crate::repositories::employee_repository::EmployeeRepository;
 
-pub struct EmployeeService<R: EmployeeRepository> {
-    pub repository: R,
+pub struct EmployeeService;
+
+impl Default for EmployeeService {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
-impl<R: EmployeeRepository> EmployeeService<R> {
-    pub fn new(repository: R) -> Self {
-        EmployeeService { repository }
+impl EmployeeService {
+    pub fn new() -> Self {
+        EmployeeService
     }
 
     pub fn verify_password(&self, employee: &Employee, raw_password: &str) -> bool {

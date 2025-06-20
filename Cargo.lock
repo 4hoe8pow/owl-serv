@@ -424,6 +424,7 @@ name = "infrastructure-owl"
 version = "0.1.0"
 dependencies = [
  "domain-owl",
+ "serde_json",
  "thiserror",
  "worker",
 ]
