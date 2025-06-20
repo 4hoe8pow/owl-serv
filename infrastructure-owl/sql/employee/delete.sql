@@ -1,1 +1,1 @@
-DELETE FROM employees WHERE employee_id = ?;
+DELETE FROM fact_employee WHERE employee_id = ?1;

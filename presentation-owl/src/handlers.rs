@@ -1,3 +1,5 @@
+pub mod requests;
+
 // 認証認可(ログイン、ログアウト、ユーザー登録、パスワードリセット)
 pub mod handle_auth;
 

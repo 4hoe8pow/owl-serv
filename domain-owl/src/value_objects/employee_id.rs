@@ -1,16 +1,27 @@
+use crate::domain_errors::DomainEmployeeError;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EmployeeId(String);
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct EmployeeId(Uuid);
 
-impl From<&str> for EmployeeId {
-    fn from(s: &str) -> Self {
-        EmployeeId(s.to_string())
+impl std::str::FromStr for EmployeeId {
+    type Err = DomainEmployeeError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Uuid::parse_str(s)
+            .map(EmployeeId)
+            .map_err(|_| DomainEmployeeError::InvalidUuid)
     }
 }
 
 impl EmployeeId {
-    pub fn value(&self) -> &str {
+    pub fn new(id: Uuid) -> Self {
+        EmployeeId(id)
+    }
+    pub fn value(&self) -> &Uuid {
         &self.0
+    }
+    pub fn from_str(s: &str) -> Result<Self, DomainEmployeeError> {
+        s.parse()
     }
 }

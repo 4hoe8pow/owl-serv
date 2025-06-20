@@ -6,19 +6,21 @@ use domain_owl::{
 
 use crate::{
     application_errors::ApplicationAuthError, dtos::auth_dto::AuthRequestDTO,
-    input_ports::AuthInputPort, output_ports::AuthOutputPort,
+    dtos::auth_dto::RegisterRequestDTO, input_ports::AuthInputPort, output_ports::AuthOutputPort,
 };
 use axum::response::Response;
+use std::sync::Arc;
 
-pub struct AuthInteractor<R: EmployeeRepository, O: AuthOutputPort> {
-    repository: R,
+pub struct AuthInteractor<R: EmployeeRepository + Send + Sync + 'static, O: AuthOutputPort> {
+    repository: Arc<R>,
     output_port: O,
-    employee_service: EmployeeService,
+    employee_service: EmployeeService<R>,
 }
 
-impl<R: EmployeeRepository, O: AuthOutputPort> AuthInteractor<R, O> {
+impl<R: EmployeeRepository + Send + Sync + 'static, O: AuthOutputPort> AuthInteractor<R, O> {
     pub fn new(repository: R, output_port: O) -> Self {
-        let employee_service = EmployeeService::new();
+        let repository = Arc::new(repository);
+        let employee_service = EmployeeService::new(Arc::clone(&repository));
         Self {
             repository,
             output_port,
@@ -27,14 +29,12 @@ impl<R: EmployeeRepository, O: AuthOutputPort> AuthInteractor<R, O> {
     }
 }
 
-impl<R: EmployeeRepository, O: AuthOutputPort> AuthInputPort for AuthInteractor<R, O> {
+impl<R: EmployeeRepository + Send + Sync + 'static, O: AuthOutputPort> AuthInputPort
+    for AuthInteractor<R, O>
+{
     async fn login(&self, auth_request: AuthRequestDTO) -> Result<Response> {
-        // emailでユーザー取得
-        let employee = match self
-            .repository
-            .find_by_email(&auth_request.employeename)
-            .await
-        {
+        // idでユーザー取得
+        let employee = match self.repository.find_by_id(&auth_request.employee_id).await {
             Some(employee) => employee,
             None => {
                 return Ok(self
@@ -45,7 +45,8 @@ impl<R: EmployeeRepository, O: AuthOutputPort> AuthInputPort for AuthInteractor<
         // パスワード検証
         if !self
             .employee_service
-            .verify_password(&employee, &auth_request.password)
+            .verify_password(&auth_request.employee_id, &auth_request.password)
+            .await
         {
             return Ok(self
                 .output_port
@@ -66,5 +67,16 @@ impl<R: EmployeeRepository, O: AuthOutputPort> AuthInputPort for AuthInteractor<
 
     async fn check_auth(&self, _auth_request: AuthRequestDTO) -> Result<Response> {
         Ok(self.output_port.auth_check_success(true))
+    }
+
+    async fn register(&self, register_request: RegisterRequestDTO) -> Result<Response> {
+        match self
+            .employee_service
+            .register_new_employee(&register_request.employee_email, &register_request.password)
+            .await
+        {
+            Ok(_) => Ok(self.output_port.register_success()),
+            Err(e) => Ok(self.output_port.register_failure(&e.to_string())),
+        }
     }
 }

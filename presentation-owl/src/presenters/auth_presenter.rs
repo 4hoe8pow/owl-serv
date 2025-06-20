@@ -42,4 +42,14 @@ impl AuthOutputPort for AuthPresenter {
     fn auth_check_failure(&self) -> Response {
         (StatusCode::BAD_REQUEST, Json(AUTH_CHECK_ERROR)).into_response()
     }
+    fn register_success(&self) -> Response {
+        (StatusCode::OK, Json(REGISTER_SUCCESS)).into_response()
+    }
+    fn register_failure(&self, message: &str) -> Response {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(REGISTER_FAILURE.to_owned() + message),
+        )
+            .into_response()
+    }
 }

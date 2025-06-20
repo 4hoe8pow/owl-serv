@@ -1,3 +1,5 @@
+use crate::common::DatetimeUtils;
+use chrono::Utc;
 use domain_owl::{
     entities::auth::employee::Employee, repositories::employee_repository::EmployeeRepository,
 };
@@ -12,46 +14,46 @@ const DELETE_SQL: &str = include_str!("../../sql/employee/delete.sql");
 
 pub struct EmployeeRepositoryImpl {
     d1: D1Database,
+    datetime_utils: DatetimeUtils,
 }
 
 impl EmployeeRepositoryImpl {
     pub fn new(env: Arc<Env>) -> Self {
         let d1 = env.d1("DB").expect("D1 binding 'DB' not found");
-        Self { d1 }
+        let datetime_utils = DatetimeUtils::new(env.clone());
+        Self { d1, datetime_utils }
     }
 }
 
 impl EmployeeRepository for EmployeeRepositoryImpl {
-    async fn find_by_email(&self, email: &str) -> Option<Employee> {
-        let stmt = self.d1.prepare(FIND_BY_EMAIL_SQL);
-        let row_opt: Option<Value> = stmt
-            .bind(&[JsValue::from(email)])
-            .ok()?
-            .first(None)
-            .await
-            .ok()?;
-        row_opt.and_then(|v| row_to_employee(&v))
-    }
-
-    async fn find_by_id(&self, id: i64) -> Option<Employee> {
+    async fn find_by_id(&self, id: &str) -> Option<Employee> {
         let stmt = self.d1.prepare(FIND_BY_ID_SQL);
-        let id_str = id.to_string();
         let row_opt: Option<Value> = stmt
-            .bind(&[JsValue::from(id_str)])
+            .bind(&[JsValue::from(id)])
             .ok()?
             .first(None)
             .await
             .ok()?;
-        row_opt.and_then(|v| row_to_employee(&v))
+        row_opt.and_then(|v| Employee::from_row(&v))
     }
 
     async fn save(&self, employee: &Employee) {
+        // 現在日時を取得
+        let now = Utc::now().naive_utc();
+        let date_id = self.datetime_utils.get_or_insert_date_id(now.date()).await;
+        let time_id = self.datetime_utils.get_or_insert_time_id(now.time()).await;
+        if date_id.is_none() || time_id.is_none() {
+            // 日付または時刻IDが取得できなければ保存しない
+            return;
+        }
         let stmt = self.d1.prepare(SAVE_SQL);
         let id = employee.employee_id.value().to_string();
         let name = employee.employee_name.value().to_string();
         let email = employee.employee_email.value().to_string();
         let role = employee.employee_role.value().to_string();
         let params = [
+            JsValue::from(date_id.unwrap()),
+            JsValue::from(time_id.unwrap()),
             JsValue::from(id),
             JsValue::from(name),
             JsValue::from(email),
@@ -71,15 +73,27 @@ impl EmployeeRepository for EmployeeRepositoryImpl {
             let _ = b.run().await;
         }
     }
-}
 
-fn row_to_employee(row: &Value) -> Option<Employee> {
-    Some(Employee::new(
-        row.get("employee_id")?.as_str()?.into(),
-        row.get("employee_name")?.as_str()?.into(),
-        row.get("employee_email")?.as_str()?.into(),
-        row.get("employee_password")?.as_str()?.into(),
-        row.get("employee_role")?.as_str()?.into(),
-        row.get("employee_status")?.as_str()?.into(),
-    ))
+    async fn verify_password(&self, employee_id: &str, raw_password: &str) -> bool {
+        if let Some(employee) = self.find_by_id(employee_id).await {
+            let hash = employee.employee_password.value();
+            return bcrypt::verify(raw_password, hash).unwrap_or(false);
+        }
+        false
+    }
+
+    async fn find_by_email(&self, email: &str) -> Option<Employee> {
+        let stmt = self.d1.prepare(FIND_BY_EMAIL_SQL);
+        let row_opt: Option<Value> = stmt
+            .bind(&[JsValue::from(email)])
+            .ok()?
+            .first(None)
+            .await
+            .ok()?;
+        row_opt.and_then(|v| Employee::from_row(&v))
+    }
+
+    async fn hash_password(&self, plain: &str) -> Result<String, String> {
+        bcrypt::hash(plain, bcrypt::DEFAULT_COST).map_err(|e| e.to_string())
+    }
 }

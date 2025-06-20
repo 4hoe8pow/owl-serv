@@ -1,1 +1,1 @@
-SELECT employee_id, employee_name, employee_email, employee_password, employee_role, employee_status FROM employees WHERE employee_id = ? LIMIT 1;
+SELECT * FROM fact_employee WHERE employee_id = ?1 LIMIT 1;

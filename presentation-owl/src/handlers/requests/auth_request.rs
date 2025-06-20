@@ -1,19 +1,33 @@
 use std::str::FromStr;
 
-use application_owl::dtos::auth_dto::AuthRequestDTO;
+use application_owl::dtos::auth_dto::{AuthRequestDTO, RegisterRequestDTO};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct AuthRequest {
     pub employee_id: String,
-    pub employee_name: String,
+    pub password: String,
+}
+
+#[derive(Deserialize)]
+pub struct RegisterRequest {
+    pub employee_email: String,
     pub password: String,
 }
 
 impl From<AuthRequest> for AuthRequestDTO {
     fn from(val: AuthRequest) -> Self {
         AuthRequestDTO {
-            employeename: val.employee_name,
+            employee_id: val.employee_id,
+            password: val.password,
+        }
+    }
+}
+
+impl From<RegisterRequest> for RegisterRequestDTO {
+    fn from(val: RegisterRequest) -> Self {
+        RegisterRequestDTO {
+            employee_email: val.employee_email,
             password: val.password,
         }
     }
@@ -24,6 +38,7 @@ pub enum AuthProcessCode {
     Login,
     Logout,
     Check,
+    Register, // 追加
 }
 
 impl FromStr for AuthProcessCode {
@@ -33,6 +48,7 @@ impl FromStr for AuthProcessCode {
             "1" => Ok(AuthProcessCode::Login),
             "2" => Ok(AuthProcessCode::Logout),
             "3" => Ok(AuthProcessCode::Check),
+            "4" => Ok(AuthProcessCode::Register), // 追加
             _ => Err(()),
         }
     }

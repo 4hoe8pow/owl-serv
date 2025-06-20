@@ -11,5 +11,7 @@ crate-type = ["cdylib"]
 worker = { workspace = true }
 axum = { workspace = true }
 tower-service = { workspace = true }
+console_log = { workspace = true }
+log = { workspace = true }
 console_error_panic_hook = { workspace = true }
 presentation-owl = { path = "../presentation-owl" }

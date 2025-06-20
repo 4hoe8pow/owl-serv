@@ -7,4 +7,9 @@ edition = "2024"
 thiserror = { workspace = true }
 worker = { workspace = true }
 serde_json = { workspace = true }
+chrono = { workspace = true }
 domain-owl = { path = "../domain-owl" }
+bcrypt = "0.17.0"
+
+[target.wasm32-unknown-unknown.dependencies]
+getrandom = { version = "0.3", features = ["wasm_js"] }

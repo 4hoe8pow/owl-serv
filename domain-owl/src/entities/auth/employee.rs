@@ -34,4 +34,16 @@ impl Employee {
             employee_status,
         }
     }
+    /// JSON rowからEmployeeを生成（値オブジェクトのバリデーションを通す）
+    pub fn from_row(row: &serde_json::Value) -> Option<Self> {
+        Some(Employee {
+            employee_id: EmployeeId::from_str(row.get("employee_id")?.as_str()?).ok()?,
+            employee_name: EmployeeName::new(row.get("employee_name")?.as_str()?).ok()?,
+            employee_email: EmployeeEmail::new(row.get("employee_email")?.as_str()?).ok()?,
+            employee_password: EmployeePassword::new(row.get("employee_password")?.as_str()?)
+                .ok()?,
+            employee_role: EmployeeRole::new(row.get("employee_role")?.as_str()?).ok()?,
+            employee_status: EmployeeStatus::new(row.get("employee_status")?.as_str()?).ok()?,
+        })
+    }
 }

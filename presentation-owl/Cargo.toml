@@ -10,5 +10,6 @@ worker = { workspace = true }
 axum = { workspace = true }
 tower-service = { workspace = true }
 serde = { workspace = true}
+serde_json = { workspace = true }
 application-owl = { path = "../application-owl" }
 infrastructure-owl = { path = "../infrastructure-owl" }
