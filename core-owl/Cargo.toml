@@ -1,0 +1,15 @@
+[package]
+name = "core-owl"
+version = "0.1.0"
+edition = "2021"
+authors = ["4hoe8pow <tokunaga@jocarium.productions>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = { workspace = true }
+axum = { workspace = true }
+tower-service = { workspace = true }
+console_error_panic_hook = { workspace = true }
+presentation-owl = { path = "../presentation-owl" }

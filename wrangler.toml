@@ -1,0 +1,6 @@
+name = "core-owl"
+main = "core-owl/build/worker/shim.mjs"
+compatibility_date = "2025-06-20"
+
+[build]
+command = "cd core-owl && cargo install -q worker-build && worker-build --release"

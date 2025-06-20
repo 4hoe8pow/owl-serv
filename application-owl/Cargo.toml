@@ -1,0 +1,10 @@
+[package]
+name = "application-owl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+axum = { workspace = true}
+domain-owl = { path = "../domain-owl" }
