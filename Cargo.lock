@@ -308,7 +308,6 @@ dependencies = [
 name = "domain-owl"
 version = "0.1.0"
 dependencies = [
- "console_log",
  "log",
  "regex",
  "serde",
@@ -596,6 +595,7 @@ dependencies = [
  "chrono",
  "domain-owl",
  "getrandom",
+ "log",
  "serde_json",
  "thiserror",
  "worker",

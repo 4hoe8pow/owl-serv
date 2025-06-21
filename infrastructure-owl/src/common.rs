@@ -17,22 +17,49 @@ impl DatetimeUtils {
         Self { d1 }
     }
 
-    pub async fn get_or_insert_date_id(&self, date: NaiveDate) -> Option<i64> {
-        let date_str = date.format("%Y-%m-%d").to_string();
+    async fn get_or_insert_id<F>(
+        &self,
+        select_sql: &str,
+        insert_sql: &str,
+        select_param: JsValue,
+        insert_params: Vec<JsValue>,
+        extract_id: F,
+    ) -> Option<i64>
+    where
+        F: Fn(&serde_json::Value) -> Option<i64>,
+    {
         // SELECT
-        let stmt = self.d1.prepare(SELECT_DATE_ID_SQL);
-        if let Ok(b) = stmt.bind(&[JsValue::from(&date_str)])
-            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await
-                && let Some(id) = row.get("date_id").and_then(|v| v.as_i64()) {
+        let stmt = self.d1.prepare(select_sql);
+        if let Ok(b) = stmt.bind(&[select_param.clone()]) {
+            if let Ok(Some(row)) = b.first::<serde_json::Value>(None).await {
+                if let Some(id) = extract_id(&row) {
                     return Some(id);
                 }
+            }
+        }
         // INSERT
+        let stmt = self.d1.prepare(insert_sql);
+        if let Ok(b) = stmt.bind(&insert_params) {
+            let _ = b.run().await;
+        }
+        // 再度SELECT
+        let stmt = self.d1.prepare(select_sql);
+        if let Ok(b) = stmt.bind(&[select_param]) {
+            if let Ok(Some(row)) = b.first::<serde_json::Value>(None).await {
+                return extract_id(&row);
+            }
+        }
+        None
+    }
+
+    pub async fn get_or_insert_date_id(&self, date: NaiveDate) -> Option<i64> {
+        let date_str = date.format("%Y-%m-%d").to_string();
         let quarter = ((date.month0()) / 3) + 1;
         let is_weekend = match date.weekday() {
             Weekday::Sat | Weekday::Sun => 1,
             _ => 0,
         };
-        let params = [
+        let params = vec![
             JsValue::from(&date_str),
             JsValue::from(date.year()),
             JsValue::from(quarter),
@@ -41,45 +68,31 @@ impl DatetimeUtils {
             JsValue::from(date.weekday().number_from_monday()),
             JsValue::from(is_weekend),
         ];
-        let stmt = self.d1.prepare(INSERT_DATE_SQL);
-        if let Ok(b) = stmt.bind(&params) {
-            let _ = b.run().await;
-        }
-        // 再度SELECT
-        let stmt = self.d1.prepare(SELECT_DATE_ID_SQL);
-        if let Ok(b) = stmt.bind(&[JsValue::from(&date_str)])
-            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await {
-                return row.get("date_id").and_then(|v| v.as_i64());
-            }
-        None
+        self.get_or_insert_id(
+            SELECT_DATE_ID_SQL,
+            INSERT_DATE_SQL,
+            JsValue::from(&date_str),
+            params,
+            |row| row.get("date_id").and_then(|v| v.as_i64()),
+        )
+        .await
     }
 
     pub async fn get_or_insert_time_id(&self, time: NaiveTime) -> Option<i64> {
         let time_str = time.format("%H:%M:%S").to_string();
-        // SELECT
-        let stmt = self.d1.prepare(SELECT_TIME_ID_SQL);
-        if let Ok(b) = stmt.bind(&[JsValue::from(&time_str)])
-            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await
-                && let Some(id) = row.get("time_id").and_then(|v| v.as_i64()) {
-                    return Some(id);
-                }
-        // INSERT
-        let params = [
+        let params = vec![
             JsValue::from(time.hour()),
             JsValue::from(time.minute()),
             JsValue::from(time.second()),
             JsValue::from(&time_str),
         ];
-        let stmt = self.d1.prepare(INSERT_TIME_SQL);
-        if let Ok(b) = stmt.bind(&params) {
-            let _ = b.run().await;
-        }
-        // 再度SELECT
-        let stmt = self.d1.prepare(SELECT_TIME_ID_SQL);
-        if let Ok(b) = stmt.bind(&[JsValue::from(&time_str)])
-            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await {
-                return row.get("time_id").and_then(|v| v.as_i64());
-            }
-        None
+        self.get_or_insert_id(
+            SELECT_TIME_ID_SQL,
+            INSERT_TIME_SQL,
+            JsValue::from(&time_str),
+            params,
+            |row| row.get("time_id").and_then(|v| v.as_i64()),
+        )
+        .await
     }
 }

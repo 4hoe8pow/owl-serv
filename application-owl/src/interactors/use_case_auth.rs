@@ -72,7 +72,12 @@ impl<R: EmployeeRepository + Send + Sync + 'static, O: AuthOutputPort> AuthInput
     async fn register(&self, register_request: RegisterRequestDTO) -> Result<Response> {
         match self
             .employee_service
-            .register_new_employee(&register_request.employee_email, &register_request.password)
+            .register_new_employee(
+                &register_request.email_address,
+                &register_request.password,
+                &register_request.employee_name,
+                register_request.department_id,
+            )
             .await
         {
             Ok(_) => Ok(self.output_port.register_success()),

@@ -1,1 +1,1 @@
-SELECT * FROM fact_employee WHERE employee_id = ?1;
+SELECT * FROM fact_employee WHERE email_address = ?1;

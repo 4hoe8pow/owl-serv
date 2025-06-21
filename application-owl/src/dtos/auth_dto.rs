@@ -4,6 +4,8 @@ pub struct AuthRequestDTO {
 }
 
 pub struct RegisterRequestDTO {
-    pub employee_email: String,
+    pub email_address: String,
     pub password: String,
+    pub department_id: i64,    // 追加
+    pub employee_name: String, // 追加
 }

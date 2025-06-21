@@ -11,8 +11,10 @@ pub struct AuthRequest {
 
 #[derive(Deserialize)]
 pub struct RegisterRequest {
-    pub employee_email: String,
+    pub email_address: String,
     pub password: String,
+    pub department_id: i64,
+    pub employee_name: String,
 }
 
 impl From<AuthRequest> for AuthRequestDTO {
@@ -27,8 +29,10 @@ impl From<AuthRequest> for AuthRequestDTO {
 impl From<RegisterRequest> for RegisterRequestDTO {
     fn from(val: RegisterRequest) -> Self {
         RegisterRequestDTO {
-            employee_email: val.employee_email,
+            email_address: val.email_address,
             password: val.password,
+            department_id: val.department_id,
+            employee_name: val.employee_name,
         }
     }
 }
@@ -38,7 +42,7 @@ pub enum AuthProcessCode {
     Login,
     Logout,
     Check,
-    Register, // 追加
+    Register,
 }
 
 impl FromStr for AuthProcessCode {
@@ -48,7 +52,7 @@ impl FromStr for AuthProcessCode {
             "1" => Ok(AuthProcessCode::Login),
             "2" => Ok(AuthProcessCode::Logout),
             "3" => Ok(AuthProcessCode::Check),
-            "4" => Ok(AuthProcessCode::Register), // 追加
+            "4" => Ok(AuthProcessCode::Register),
             _ => Err(()),
         }
     }

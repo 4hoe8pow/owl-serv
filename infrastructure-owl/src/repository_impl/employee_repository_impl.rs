@@ -1,7 +1,9 @@
 use crate::common::DatetimeUtils;
+use crate::infrastructure_errors::InfrastructureAuthError;
 use chrono::Utc;
 use domain_owl::{
-    entities::auth::employee::Employee, repositories::employee_repository::EmployeeRepository,
+    entities::auth::employee::Employee, owl_error::OwlError,
+    repositories::employee_repository::EmployeeRepository,
 };
 use serde_json::Value;
 use std::sync::Arc;
@@ -30,46 +32,49 @@ impl EmployeeRepository for EmployeeRepositoryImpl {
         let stmt = self.d1.prepare(FIND_BY_ID_SQL);
         let row_opt: Option<Value> = stmt
             .bind(&[JsValue::from(id)])
-            .ok()?
+            .ok()? // SQLバインド失敗
             .first(None)
             .await
-            .ok()?;
+            .ok()?; // SQL実行失敗
         row_opt.and_then(|v| Employee::from_row(&v))
     }
 
-    async fn save(&self, employee: &Employee) {
-        // 現在日時を取得
+    async fn save(&self, employee: &Employee) -> Result<(), Box<dyn OwlError>> {
         let now = Utc::now().naive_utc();
         let date_id = self.datetime_utils.get_or_insert_date_id(now.date()).await;
         let time_id = self.datetime_utils.get_or_insert_time_id(now.time()).await;
         if date_id.is_none() || time_id.is_none() {
-            // 日付または時刻IDが取得できなければ保存しない
-            return;
+            return Err(Box::new(InfrastructureAuthError::DateTimeIdError));
         }
         let stmt = self.d1.prepare(SAVE_SQL);
-        let id = employee.employee_id.value().to_string();
-        let name = employee.employee_name.value().to_string();
-        let email = employee.employee_email.value().to_string();
-        let role = employee.employee_role.value().to_string();
         let params = [
-            JsValue::from(date_id.unwrap()),
-            JsValue::from(time_id.unwrap()),
-            JsValue::from(id),
-            JsValue::from(name),
-            JsValue::from(email),
-            JsValue::from(employee.employee_password.value()),
-            JsValue::from(role),
-            JsValue::from(employee.employee_status.value()),
+            JsValue::from(date_id.unwrap().to_string()), // date_id
+            JsValue::from(time_id.unwrap().to_string()), // time_id
+            JsValue::from(employee.employee_id.value().to_string()), // employee_id
+            JsValue::from(employee.employee_name.value()), // employee_name
+            JsValue::from(employee.department_id.value().to_string()), // department_id
+            JsValue::from(i64::from(employee.employee_status).to_string()), // employment_status_id
+            JsValue::from(employee.email_address.value()), // email_address
+            JsValue::from(employee.employee_role.value()), // role
+            JsValue::from(""),                           // comments（空文字）
+            JsValue::from(employee.employee_password.value()), // hashed_password
         ];
-        if let Ok(b) = stmt.bind(&params) {
-            let _ = b.run().await;
+        match stmt.bind(&params) {
+            Ok(b) => {
+                let result = b.run().await;
+                match result {
+                    Ok(_) => Ok(()),
+                    Err(_) => Err(Box::new(InfrastructureAuthError::SaveFailed)),
+                }
+            }
+            Err(_) => Err(Box::new(InfrastructureAuthError::BindFailed)),
         }
     }
 
     async fn delete(&self, id: i64) {
         let stmt = self.d1.prepare(DELETE_SQL);
         let id_str = id.to_string();
-        if let Ok(b) = stmt.bind(&[JsValue::from(id_str)]) {
+        if let Ok(b) = stmt.bind(&[JsValue::from(id_str.clone())]) {
             let _ = b.run().await;
         }
     }
@@ -86,10 +91,10 @@ impl EmployeeRepository for EmployeeRepositoryImpl {
         let stmt = self.d1.prepare(FIND_BY_EMAIL_SQL);
         let row_opt: Option<Value> = stmt
             .bind(&[JsValue::from(email)])
-            .ok()?
+            .ok()? // SQLバインド失敗
             .first(None)
             .await
-            .ok()?;
+            .ok()?; // SQL実行失敗
         row_opt.and_then(|v| Employee::from_row(&v))
     }
 

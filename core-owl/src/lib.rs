@@ -4,9 +4,11 @@ use axum::{
     Router,
 };
 use presentation_owl::handlers::handle_auth::*;
-use std::sync::Arc;
+use std::sync::{Arc, Once};
 use tower_service::Service;
 use worker::*;
+
+static INIT_LOG: Once = Once::new();
 
 fn router(env: Arc<Env>) -> Router {
     Router::new()
@@ -22,7 +24,9 @@ async fn fetch(
     _ctx: Context,
 ) -> worker::Result<Response<axum::body::Body>> {
     console_error_panic_hook::set_once();
-    console_log::init_with_level(log::Level::Debug).expect("console_log init failed");
+    INIT_LOG.call_once(|| {
+        console_log::init_with_level(log::Level::Debug).ok();
+    });
 
     let mut app = router(Arc::new(env));
 

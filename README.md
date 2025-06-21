@@ -78,7 +78,7 @@ npx wrangler d1 execute owl-database01 --local \
 
 ```bash
 # マイグレーションファイルの作成
-npx wrangler d1 migrations create owl-database01 ${v00001_init_schema}
+npx wrangler d1 migrations create owl-database01 ${init_schema}
 
 # マイグレーションのローカル適用
 npx wrangler d1 migrations apply owl-database01 --local
@@ -100,7 +100,13 @@ npx wrangler d1 export owl-database01 --output=schema.sql --remote --no-data
 ## お試し
 
 ```bash
-curl -X POST http://localhost:8787/auth/1 \
+curl -X POST http://localhost:8787/auth/4 \
   -H "Content-Type: application/json" \
-  -d '{"employee_id":"12345","password":"supersecret"}'
+  -d '{"email_address":"test@joc.prod","password":"P@ssw0rd123"}'
+```
+
+### seed.sqlの適用
+
+```bash
+npx wrangler d1 execute owl-database01 --local --file=seed.sql
 ```
