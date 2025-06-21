@@ -41,9 +41,7 @@ impl<R: EmployeeRepository + Send + Sync> EmployeeService<R> {
         email: &str,
         password: &str,
     ) -> Result<(), DomainEmployeeError> {
-        info!(
-            "register_new_employee called: email={email}, password=***"
-        );
+        info!("register_new_employee called: email={email}, password=***");
         // email重複チェック
         debug!("Checking for duplicate email: {email}");
         if self.repository.find_by_email(email).await.is_some() {
@@ -87,9 +85,7 @@ impl<R: EmployeeRepository + Send + Sync> EmployeeService<R> {
         );
         debug!("Saving new employee to repository: email={email}");
         self.repository.save(&employee).await;
-        info!(
-            "register_new_employee finished successfully: email={email}"
-        );
+        info!("register_new_employee finished successfully: email={email}");
         Ok(())
     }
 }

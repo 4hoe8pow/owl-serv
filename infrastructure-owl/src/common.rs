@@ -23,9 +23,10 @@ impl DatetimeUtils {
         let stmt = self.d1.prepare(SELECT_DATE_ID_SQL);
         if let Ok(b) = stmt.bind(&[JsValue::from(&date_str)])
             && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await
-                && let Some(id) = row.get("date_id").and_then(|v| v.as_i64()) {
-                    return Some(id);
-                }
+            && let Some(id) = row.get("date_id").and_then(|v| v.as_i64())
+        {
+            return Some(id);
+        }
         // INSERT
         let quarter = ((date.month0()) / 3) + 1;
         let is_weekend = match date.weekday() {
@@ -48,9 +49,10 @@ impl DatetimeUtils {
         // 再度SELECT
         let stmt = self.d1.prepare(SELECT_DATE_ID_SQL);
         if let Ok(b) = stmt.bind(&[JsValue::from(&date_str)])
-            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await {
-                return row.get("date_id").and_then(|v| v.as_i64());
-            }
+            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await
+        {
+            return row.get("date_id").and_then(|v| v.as_i64());
+        }
         None
     }
 
@@ -60,9 +62,10 @@ impl DatetimeUtils {
         let stmt = self.d1.prepare(SELECT_TIME_ID_SQL);
         if let Ok(b) = stmt.bind(&[JsValue::from(&time_str)])
             && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await
-                && let Some(id) = row.get("time_id").and_then(|v| v.as_i64()) {
-                    return Some(id);
-                }
+            && let Some(id) = row.get("time_id").and_then(|v| v.as_i64())
+        {
+            return Some(id);
+        }
         // INSERT
         let params = [
             JsValue::from(time.hour()),
@@ -77,9 +80,10 @@ impl DatetimeUtils {
         // 再度SELECT
         let stmt = self.d1.prepare(SELECT_TIME_ID_SQL);
         if let Ok(b) = stmt.bind(&[JsValue::from(&time_str)])
-            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await {
-                return row.get("time_id").and_then(|v| v.as_i64());
-            }
+            && let Ok(Some(row)) = b.first::<serde_json::Value>(None).await
+        {
+            return row.get("time_id").and_then(|v| v.as_i64());
+        }
         None
     }
 }
